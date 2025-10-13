@@ -7,6 +7,9 @@ This is the official implementation of our work "InstructFlow: Adaptive Symbolic
 conda activate instructflow
 python -m pip install -e . </pre>
 
+# Add your OpenAI Key
+<pre lang="md">echo "OPENAI_KEY='<YOUR-KEY-HERE>'" > .env</pre>
+
 # Example commands
 <pre lang="md">python eval_policy.py --config-dir . --config-name=instructflow_draw_star.yaml</pre>
 
