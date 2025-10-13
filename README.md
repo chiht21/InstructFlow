@@ -8,4 +8,4 @@ conda activate instructflow
 python -m pip install -e . </pre>
 
 # Example commands
-<pre lang="md">python eval_policy.py --config-dir . --config-name=proc3s_draw_star.yaml</pre>
+<pre lang="md">python eval_policy.py --config-dir . --config-name=instructflow_draw_star.yaml</pre>
