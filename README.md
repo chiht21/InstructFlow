@@ -6,3 +6,6 @@ This is the official implementation of our work "InstructFlow: Adaptive Symbolic
 <pre lang="md">conda create -n "instructflow" python=3.10
 conda activate instructflow
 python -m pip install -e . </pre>
+
+# Example commands
+<pre lang="md">python eval_policy.py --config-dir . --config-name=proc3s_draw_star.yaml</pre>
