@@ -3,4 +3,6 @@ This is the official implementation of our work "InstructFlow: Adaptive Symbolic
 ![image](https://github.com/Chi-haotian/InstructFlow/blob/main/figures/Overview.png)
 
 # Setup
-<pre lang="md"> ```bash curl -LsSf https://astral.sh/uv/0.7.7/install.sh | sh ``` </pre>
+<pre lang="md"> conda create -n "proc3s" python=3.10
+conda activate proc3s
+python -m pip install -e . </pre>
