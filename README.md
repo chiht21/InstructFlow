@@ -3,7 +3,6 @@ This is the official implementation of our work "InstructFlow: Adaptive Symbolic
 ![image](https://github.com/Chi-haotian/InstructFlow/blob/main/figures/Overview.png)
 
 # Setup
-<pre lang="md"> 
-conda create -n "instructflow" python=3.10
+<pre lang="md">conda create -n "instructflow" python=3.10
 conda activate instructflow
 python -m pip install -e . </pre>
