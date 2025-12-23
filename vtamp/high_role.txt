@@ -1,0 +1,222 @@
+Your goal is to construct a dynamic, adaptive computation graph for task planning. 
+
+This computation graph consists of base action planning nodes and is dynamically refined through the incremental insertion of functional nodes in response to failure feedback, gradually improving the overall task plan.
+
+First, you need to generate basic action planning nodes based on the goal and initial state to construct the initial computation graph.
+
+Do not generate any functional nodes at this stage.
+
+#Node Type: Base Action Planning Node
+
+The basic nodes form the initial plan of the task，each base action planning node serves as a high-level semantic directive within the task plan, guiding downstream code generation.
+
+Each node should include a semantic description of the subgoal, which can represent either:
+
+a concrete manipulation action (e.g., pick, place), or a prerequisite operation (e.g., selecting a target object, removing an obstacle).
+
+The subgoals in the generated computational graph will guide the low-level code generation.
+
+Ensure all subgoals:
+- follow a logical execution order
+- cover all required manipulations
+
+Defination:
+{
+  "id": "n1",
+  "type": "action",
+  "inputs": ["goal", "initial_state"],
+  "output": "subgoal"
+}
+
+Output format:
+{
+  "subgoal": "<natural language description of the subgoal>"
+}
+
+#define user
+Goal: Place a green block next to another green bowl
+initial = RavenBelief({"object_0": RavenObject(category="block", color="yellow", pose=[0.04, -0.36, 0.02, 0.0, -0.0, -0.0]), "object_1": RavenObject(category="block", color="green", pose=[0.05, -0.55, 0.02, 0.0, -0.0, -0.0]), "object_2": RavenObject(category="block", color="blue", pose=[-0.08, -0.68, 0.02, 0.0, -0.0, -0.0]), "object_3": RavenObject(category="bowl", color="green", pose=[-0.14, -0.35, 0.03, 0.0, -0.0, 0.0])})
+
+#define assistant
+```
+{
+  "id": "n1",
+  "type": "action",
+  "subgoal": "Pick object_1"
+}
+
+{
+  "id": "n2",
+  "type": "action",
+  "subgoal": "Place object_1 next to object_3"
+}
+```
+
+Second, you need to dynamically select appropriate functional node(s) based on rule-based symbolic predicates to provide the necessary information or instructions for resolving failures, and update the computation graph accordingly.
+
+For each rule-based symbolic predicate, determine whether the functional node is needed to resolve the issue:
+- If no functional node is needed, revise the current computation graph accordingly (e.g., by modifying, removing, or reordering existing nodes). Then update the computation graph based on the output of the inserted node(s).
+- If any functional node is required, select the appropriate node(s), and insert it into the graph at a suitable location. Then update the computation graph based on the output of the inserted node(s).
+
+There are five types of functional nodes that can be selected. You need to determine, based on the specific rule-based symbolic predicate, which node(s) to introduce in order to resolve the issue. 
+
+And you need to infer the <output> of each node based on its required input information, and treat this output as effective information for addressing task failure or as guidance for updating the computation graph to generate a new plan.
+The definitions of the three functional nodes are as follows.
+
+## Node Type: Spatial Perception Reasoning Node
+The spatial perception node analyzes pairwise spatial relationships between all visible objects to generate a spatial relation graph.
+
+Defination:
+{
+  "id": "n2",
+  "type": "sptial_relation_reasoning_node",
+  "input": ["initial_state"],
+  "output": <"spatial_relation_graph">
+}
+
+Output format (spatial_relation_graph):
+{
+  "spatial_relations": [
+    {"from": "object_0", "to": "object_1", "relation": "right of"},
+    {"from": "object_1", "to": "object_3", "relation": "left of"},
+    {"from": "object_2", "to": "object_1", "relation": "below"},
+    {"from": "object_3", "to": "object_1", "relation": "right of"}
+  ]
+}
+
+## Node Type: Object Density Analysis Node
+The object density analysis node estimate the local spatial density around each object to reflect how crowded its surroundings are.
+
+Defination:
+{
+  "id": "n3",
+  "type": "object_density_analysis_node",
+  "input": ["initial_state"],
+  "output": <"object_density_map">
+}
+
+Output format (object_density_map):
+
+{ 
+  "object_density_map": {
+      "object_0": 0.12,
+      "object_1": 0.35,
+      "object_2": 0.85,
+      ...
+    }
+}
+
+## Node Type: Object Selection Reasoning Node
+The object selection node combines the goal, the output of the spatial perception node, the output of the object density analysis node as the inputs to infer which correct manipulated object(s) should be selected to accomplish the goal
+
+Defination:
+{
+  "id": "n4",
+  "type": "object_selection_reasoning_node",
+  "input": ["goal","spatial_relations_graph", "object_density_map", symbolic_predicate"], 
+  "output": <"manipulated_objects">
+}
+
+## Node Type: Plan Logic Reasoning Node
+The object selection node combines the goal, the output of object selection reasoning node, and the symbolic predicate as the inputs to infer the correct execution order among the manipulated targets
+
+{
+  "id": "n5",
+  "type": "plan_logic_reasoning_node",
+  "input": ["goal","manipulated_objects", "symbolic_predicate"], 
+  "output": <"execution_order_among_manipulated_objects">
+}
+
+## Node Type: Parameter Range Adjustment Node
+The parameter range adjustment node combines the goal and the symbolic predicate to adjusts the ranges of action plan parameters based on explicit rules defined in symbolic predicates, and outputs instructions indicating whether to expand or shrink the ranges to meet task requirements.
+
+Defination:
+{
+  "id": "n6",
+  "type": "Parameter_range_adjustment_node",
+  "inputs": ["goal", "symbolic_predicate"], 
+  "outputs": <"range_adjustment_instruction">
+}
+
+#define user
+(param_upper_bound ?offset (/ (block_size ?b) 2))
+
+Based on the related elements, the offset domain is too large for a block of size 0.04. Because the x_offset in the low-level code (-0.03, 0.03) > half the block width (0.04/2), the top block's center of mass is too far off.
+
+
+#define assistant
+
+selected nodes:
+{
+  "id": "n5",
+  "type": "Parameter_range_adjustment_node",
+  "inputs": ["goal", "symbolic_predicate"], 
+  "outputs": ["Narrow the range of x_offset values"]
+}
+```
+
+Updated computation graph:
+
+'''
+{
+  "id": "n1",
+  "type": "action",
+  "subgoal": "Pick object_1"
+}
+
+{
+  "id": "n2",
+  "type": "action",
+  "subgoal": "Place object_1 next to object_0"
+}
+
+{
+  "id": "n3",
+  "type": "Parameter_range_adjustment_node",
+  "subgoal": "Narrow the range of x_offset values"
+}
+'''
+
+#define user
+(clear_path object_1)
+
+From the low-level code, the first action is pick object_1 (step 0). The feedback shows the gripper collided with object_2. This suggests that object_2 is an occluding object that blocks the manipulation path to object_1
+
+#define assistant
+
+selected nodes:
+{
+  "id": "n3",
+  "type": "object_density_analysis_node",
+  "input": ["initial_state"],
+  "output": ["object_2"]
+}
+
+Updated computation graph:
+
+```
+{
+  "id": "n1",
+  "type": "object_selection",
+  "subgoal": "Pick object_2"
+}
+
+{
+  "id": "n2",
+  "type": "action",
+  "subgoal": "Place object_2 at a clear location"
+}
+
+{
+  "id": "n3",
+  "type": "action",
+  "subgoal": "Pick object_1"
+}
+
+{
+  "id": "n4",
+  "type": "action",
+  "subgoal": "Place object_1 next to object_3"
+}
+```
+
